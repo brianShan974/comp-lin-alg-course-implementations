@@ -8,7 +8,7 @@ A0 = random.randn(500, 500)
 x0 = random.randn(500)
 
 
-def basic_matvec(A, x):
+def basic_matvec(A: np.ndarray, x: np.ndarray) -> np.ndarray:
     """
     Elementary matrix-vector multiplication.
 
@@ -22,13 +22,23 @@ def basic_matvec(A, x):
     :return b: m-dimensional numpy array
     """
 
-    raise NotImplementedError
+    m, n = A.shape
+    l = x.shape[0]
+    assert n == l, "The matrix vector multiplication is not possible."
+
+    result = np.zeros(m)
+
+    for row in range(m):
+        for i in range(n):
+            result[row] += A[row][i] * x[i]
+
+    return result
 
 
 def column_matvec(A, x):
     """
     Matrix-vector multiplication using the representation of the product
-    Ax as linear combinations of the columns of A, using the entries in 
+    Ax as linear combinations of the columns of A, using the entries in
     x as coefficients.
 
 
@@ -40,7 +50,15 @@ def column_matvec(A, x):
     This should be implemented using a single loop over the entries of x
     """
 
-    raise NotImplementedError
+    m, n = A.shape
+    l = x.shape[0]
+    assert n == l, "The matrix vector multiplication is not possible."
+
+    result = np.zeros(m)
+    for col in range(n):
+        result += A[:, col] * x[col]
+
+    return result
 
 
 def timeable_basic_matvec():
@@ -49,7 +67,7 @@ def timeable_basic_matvec():
     pass to timeit.
     """
 
-    b = basic_matvec(A0, x0) # noqa
+    b = basic_matvec(A0, x0)  # noqa
 
 
 def timeable_column_matvec():
@@ -58,7 +76,7 @@ def timeable_column_matvec():
     pass to timeit.
     """
 
-    b = column_matvec(A0, x0) # noqa
+    b = column_matvec(A0, x0)  # noqa
 
 
 def timeable_numpy_matvec():
@@ -67,7 +85,7 @@ def timeable_numpy_matvec():
     we can pass to timeit.
     """
 
-    b = A0.dot(x0) # noqa
+    b = A0.dot(x0)  # noqa
 
 
 def time_matvecs():
@@ -93,9 +111,19 @@ def rank2(u1, u2, v1, v2):
     :param v2: n-dimensional numpy array
     """
 
-    raise NotImplementedError
+    m = u1.shape[0]
+    n = v2.shape[0]
+    A = np.zeros((m, n), dtype=np.complex128)
 
-    A = B.dot(C)
+    v1 = np.conj(v1)
+    v2 = np.conj(v2)
+
+    for i in range(m):
+        for j in range(n):
+            A[i][j] += u1[i] * v1[j]
+            A[i][j] += u2[i] * v2[j]
+
+    # A = B.dot(C)
 
     return A
 
@@ -109,7 +137,10 @@ def rank1pert_inv(u, v):
     :param v: m-dimensional numpy array
     """
 
-    raise NotImplementedError
+    m = u.shape[0]
+    a = -1 / (np.dot(np.conj(v), u) + 1)
+
+    Ainv = np.identity(m) + a * rank2(u, np.zeros_like(u), v, np.zeros_like(v))
 
     return Ainv
 
@@ -125,6 +156,17 @@ def ABiC(Ahat, xr, xi):
     :return zi: m-dimensional numpy arrays containing the imaginary part of z.
     """
 
-    raise NotImplementedError
+    B = np.zeros_like(Ahat)
+    C = np.zeros_like(Ahat)
+
+    for (i, j), elem in np.ndenumerate(Ahat):
+        if i >= j:
+            B[i][j] = B[j][i] = elem
+        else:
+            C[i][j] = elem
+            C[j][i] = -elem
+
+    zr = column_matvec(B, xr) - column_matvec(C, xi)
+    zi = column_matvec(C, xr) + column_matvec(B, xi)
 
     return zr, zi
